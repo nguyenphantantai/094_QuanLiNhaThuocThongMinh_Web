@@ -55,6 +55,95 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
     }
   }, [countdown]);
 
+  // Individual field validation functions
+  const validatePhone = (phoneValue: string) => {
+    if (!phoneValue.trim()) {
+      return 'Nhập số điện thoại';
+    }
+    const cleanPhone = phoneValue.replace(/\s/g, '');
+    const phoneRegex = /^(0|\+84)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|8|9]|9[0-4|6-9])[0-9]{7}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      return 'Số điện thoại Việt Nam không hợp lệ (VD: 0987654321)';
+    }
+    return '';
+  };
+
+  const validateEmail = (emailValue: string) => {
+    if (!emailValue.trim()) {
+      return 'Email là bắt buộc';
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(emailValue)) {
+      return 'Email không hợp lệ (VD: example@gmail.com)';
+    }
+    return '';
+  };
+
+  const validatePassword = (passwordValue: string) => {
+    if (!passwordValue.trim()) {
+      return 'Mật khẩu là bắt buộc';
+    }
+    if (passwordValue.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự';
+    }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(passwordValue)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt';
+    }
+    return '';
+  };
+
+  const validateConfirmPassword = (confirmPasswordValue: string) => {
+    if (!confirmPasswordValue.trim()) {
+      return 'Vui lòng xác nhận mật khẩu';
+    }
+    if (password !== confirmPasswordValue) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return '';
+  };
+
+  const validateOTP = (otpValue: string) => {
+    if (!otpValue.trim()) {
+      return 'Nhập mã xác thực';
+    }
+    if (otpValue.length !== 6) {
+      return 'Mã xác thực phải có 6 chữ số';
+    }
+    if (!/^\d{6}$/.test(otpValue)) {
+      return 'Mã xác thực chỉ được chứa số';
+    }
+    return '';
+  };
+
+  // Handle field blur validation
+  const handleFieldBlur = (field: string, value: string) => {
+    let errorMessage = '';
+    
+    switch (field) {
+      case 'phone':
+        errorMessage = validatePhone(value);
+        break;
+      case 'email':
+        errorMessage = validateEmail(value);
+        break;
+      case 'password':
+        errorMessage = validatePassword(value);
+        break;
+      case 'confirmPassword':
+        errorMessage = validateConfirmPassword(value);
+        break;
+      case 'otp':
+        errorMessage = validateOTP(value);
+        break;
+    }
+    
+    setErrors(prev => ({
+      ...prev,
+      [field]: errorMessage
+    }));
+  };
+
   const validateForm = () => {
     const newErrors: {
       phone?: string;
@@ -64,45 +153,15 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
       otp?: string;
     } = {};
     
-    if (!phone.trim()) {
-      newErrors.phone = 'Nhập số điện thoại';
-    } else {
-      // Validate Vietnamese phone number
-      const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
-      if (!phoneRegex.test(phone)) {
-        newErrors.phone = 'Số điện thoại không hợp lệ';
-      }
-    }
-    
-    if (!password.trim()) {
-      newErrors.password = 'Mật khẩu bỏ trống';
-    } else if (password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    
-    if (!confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu của bạn.';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu không khớp';
-    }
-    
-    if (!email.trim()) {
-      newErrors.email = 'Enter email valid';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        newErrors.email = 'Email không hợp lệ';
-      }
-    }
-    
-    if (!otp.trim()) {
-      newErrors.otp = 'Nhập mã xác thực';
-    } else if (otp.length !== 6) {
-      newErrors.otp = 'Mã xác thực phải có 6 chữ số';
-    }
+    // Use individual validation functions
+    newErrors.phone = validatePhone(phone);
+    newErrors.email = validateEmail(email);
+    newErrors.password = validatePassword(password);
+    newErrors.confirmPassword = validateConfirmPassword(confirmPassword);
+    newErrors.otp = validateOTP(otp);
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).filter(key => newErrors[key as keyof typeof newErrors]).length === 0;
   };
 
   const handleSendOTP = async () => {
@@ -228,7 +287,7 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
           
           toast({
             title: "Đăng ký thành công",
-            description: "Chào mừng bạn đến với NhaThuocAI!",
+            description: "Chào mừng bạn đến với Nhà Thuốc Thông Minh!",
           });
           
           // Reload page to update UI
@@ -259,9 +318,9 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
           <div className="flex items-center justify-between p-6 pb-4">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-lg">N</span>
+              <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="text-xl font-bold text-green-600">NhaThuocAI</span>
+            <span className="text-xl font-bold text-green-600">Nhà Thuốc Thông Minh</span>
           </div>
             <div className="flex items-center space-x-1 text-sm text-gray-600">
               <Globe className="w-4 h-4" />
@@ -283,9 +342,12 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
                 </label>
                 <Input
                   placeholder="Số điện thoại"
-                  className="h-12 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  className={`h-12 rounded-lg ${
+                    errors.phone ? 'border-red-500' : 'border-gray-300'
+                  } focus:border-green-500 focus:ring-green-500`}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  onBlur={() => handleFieldBlur('phone', phone)}
                   maxLength={11}
                 />
                 {errors.phone && (
@@ -312,6 +374,7 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
                     } focus:border-green-500 focus:ring-green-500`}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onBlur={() => handleFieldBlur('password', password)}
                   />
                   <button
                     type="button"
@@ -345,6 +408,7 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
                     } focus:border-green-500 focus:ring-green-500`}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    onBlur={() => handleFieldBlur('confirmPassword', confirmPassword)}
                   />
                   <button
                     type="button"
@@ -377,9 +441,10 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
                   } focus:border-green-500 focus:ring-green-500`}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => handleFieldBlur('email', email)}
                 />
                 <p className="mt-1 text-sm text-gray-500">
-                  Email bị bắt buộc để khôi phục tài khoản NhaThuocAI. Địa chỉ Gmail sẽ được định dạng lại để chặn email trái phép.
+                  Email bị bắt buộc để khôi phục tài khoản Nhà Thuốc Thông Minh. Địa chỉ Gmail sẽ được định dạng lại để chặn email trái phép.
                 </p>
                 {errors.email && (
                   <Alert className="mt-2 border-red-200 bg-red-50">
@@ -404,6 +469,7 @@ export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: Regis
                     } focus:border-green-500 focus:ring-green-500`}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onBlur={() => handleFieldBlur('otp', otp)}
                     maxLength={6}
                     disabled={!otpSent}
                   />

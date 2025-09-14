@@ -7,9 +7,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <div className="text-2xl font-bold mb-4">
-              <span className="text-white">NHÀ THUỐC</span><br />
-              <span className="text-secondary">Pharmacy</span>
+            <div className="text-2xl font-bold mb-4 text-center">
+              <div className="text-white">NHÀ THUỐC</div>
+              <div className="text-white">THÔNG MINH</div>
             </div>
             <p className="text-sm mb-4">
               Hệ thống nhà thuốc uy tín với hơn 1000 cửa hàng trên toàn quốc
@@ -61,7 +61,7 @@ export default function Footer() {
         <div className="border-t border-primary-foreground/20 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-sm mb-4 md:mb-0" data-testid="text-copyright">
-              © 2024 Pharmacy. Tất cả quyền được bảo lưu.
+              © 2024 Nhà Thuốc Thông Minh. Tất cả quyền được bảo lưu.
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm">Phương thức thanh toán:</span>

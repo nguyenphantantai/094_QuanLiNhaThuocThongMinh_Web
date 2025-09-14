@@ -8,9 +8,9 @@ export default function HeroBanner() {
           {/* Main promotional banner */}
           <div className="lg:col-span-2">
             <div className="relative bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400 rounded-2xl p-6 overflow-hidden">
-              <div className="absolute top-4 left-4 bg-white rounded-full px-3 py-1 text-sm font-semibold">
-                <span className="text-primary">NHÀ THUỐC</span>
-                <span className="text-secondary"> Pharmacy</span>
+              <div className="absolute top-4 left-4 bg-white rounded-full px-3 py-1 text-sm font-semibold text-center">
+                <div className="text-primary">NHÀ THUỐC</div>
+                <div className="text-primary">THÔNG MINH</div>
               </div>
               <div className="text-center mt-8">
                 <h1 className="text-4xl font-bold text-white mb-2">Gì cũng có</h1>

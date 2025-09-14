@@ -136,7 +136,7 @@ export default function OTPVerificationDialog({
     onSuccess: (data) => {
       if (data.success && data.data) {
         const successMessage = isRegistration 
-          ? "Đăng ký thành công! Chào mừng bạn đến với NhaThuocAI!"
+          ? "Đăng ký thành công! Chào mừng bạn đến với Nhà Thuốc Thông Minh!"
           : `Xác thực thành công! Chào mừng ${data.data.user.firstName || data.data.user.phone}!`;
         
         toast({
@@ -191,8 +191,8 @@ export default function OTPVerificationDialog({
             <DialogTitle className="text-xl font-bold">Xác thực OTP</DialogTitle>
             <DialogDescription className="text-base text-muted-foreground">
               {isRegistration 
-                ? "NhaThuocAI sẽ gửi cho bạn 1 mã xác thực (OTP) qua số điện thoại để hoàn tất đăng ký"
-                : "NhaThuocAI sẽ gửi cho bạn 1 mã xác thực (OTP) qua số điện thoại"
+                ? "Nhà Thuốc Thông Minh sẽ gửi cho bạn 1 mã xác thực (OTP) qua số điện thoại để hoàn tất đăng ký"
+                : "Nhà Thuốc Thông Minh sẽ gửi cho bạn 1 mã xác thực (OTP) qua số điện thoại"
               }
             </DialogDescription>
           </DialogHeader>

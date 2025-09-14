@@ -23,29 +23,135 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
     firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
     gender?: string;
+    address?: string;
   }>({});
   const { toast } = useToast();
 
   // Debug props
   console.log('CompleteProfileForm props:', { isOpen, onClose, onComplete });
 
+  // Individual field validation functions
+  const validateFirstName = (firstNameValue: string) => {
+    if (!firstNameValue.trim()) {
+      return 'Họ là bắt buộc';
+    }
+    const nameRegex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/;
+    if (!nameRegex.test(firstNameValue.trim())) {
+      return 'Họ chỉ được chứa chữ cái và khoảng trắng';
+    }
+    if (firstNameValue.trim().length < 2) {
+      return 'Họ phải có ít nhất 2 ký tự';
+    }
+    return '';
+  };
+
+  const validateLastName = (lastNameValue: string) => {
+    if (!lastNameValue.trim()) {
+      return 'Tên là bắt buộc';
+    }
+    const nameRegex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/;
+    if (!nameRegex.test(lastNameValue.trim())) {
+      return 'Tên chỉ được chứa chữ cái và khoảng trắng';
+    }
+    if (lastNameValue.trim().length < 2) {
+      return 'Tên phải có ít nhất 2 ký tự';
+    }
+    return '';
+  };
+
+  const validateDateOfBirth = (dateValue: string) => {
+    if (!dateValue.trim()) {
+      return 'Ngày sinh là bắt buộc';
+    }
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateValue)) {
+      return 'Ngày sinh không hợp lệ (DD/MM/YYYY)';
+    }
+    const birthDate = new Date(dateValue);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    
+    if (birthDate > today) {
+      return 'Ngày sinh không thể là ngày tương lai';
+    }
+    if (age < 13) {
+      return 'Bạn phải ít nhất 13 tuổi để đăng ký';
+    }
+    if (age > 120) {
+      return 'Ngày sinh không hợp lệ';
+    }
+    return '';
+  };
+
+  const validateGender = (genderValue: string) => {
+    if (!genderValue) {
+      return 'Giới tính là bắt buộc';
+    }
+    return '';
+  };
+
+  const validateAddress = (addressValue: string) => {
+    if (!addressValue.trim()) {
+      return 'Địa chỉ là bắt buộc';
+    }
+    if (addressValue.trim().length < 10) {
+      return 'Địa chỉ phải có ít nhất 10 ký tự';
+    }
+    if (addressValue.trim().length > 200) {
+      return 'Địa chỉ không được vượt quá 200 ký tự';
+    }
+    return '';
+  };
+
+  // Handle field blur validation
+  const handleFieldBlur = (field: string, value: string) => {
+    let errorMessage = '';
+    
+    switch (field) {
+      case 'firstName':
+        errorMessage = validateFirstName(value);
+        break;
+      case 'lastName':
+        errorMessage = validateLastName(value);
+        break;
+      case 'dateOfBirth':
+        errorMessage = validateDateOfBirth(value);
+        break;
+      case 'gender':
+        errorMessage = validateGender(value);
+        break;
+      case 'address':
+        errorMessage = validateAddress(value);
+        break;
+    }
+    
+    setErrors(prev => ({
+      ...prev,
+      [field]: errorMessage
+    }));
+  };
+
   const validateForm = () => {
     const newErrors: {
       firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
       gender?: string;
+      address?: string;
     } = {};
     
-    if (!firstName.trim()) {
-      newErrors.firstName = 'Họ tên là bắt buộc';
-    }
-    
-    if (!gender) {
-      newErrors.gender = 'Giới tính là bắt buộc';
-    }
+    // Use individual validation functions
+    newErrors.firstName = validateFirstName(firstName);
+    newErrors.lastName = validateLastName(lastName);
+    newErrors.dateOfBirth = validateDateOfBirth(dateOfBirth);
+    newErrors.gender = validateGender(gender);
+    newErrors.address = validateAddress(address);
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).filter(key => newErrors[key as keyof typeof newErrors]).length === 0;
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,9 +275,9 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
         <div className="flex items-center justify-between p-6 pb-4">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-lg">N</span>
+              <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="text-xl font-bold text-green-600">NhaThuocAI</span>
+            <span className="text-xl font-bold text-green-600">Nhà Thuốc Thông Minh</span>
           </div>
           <div className="flex items-center space-x-1 text-sm text-gray-600">
             <Globe className="w-4 h-4" />
@@ -230,18 +336,19 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
               </div>
             </div>
 
-            {/* Full Name */}
+            {/* First Name */}
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-2">
-                Họ và tên <span className="text-red-500">*</span>
+                Họ <span className="text-red-500">*</span>
               </label>
               <Input
-                placeholder="Nhập họ và tên đầy đủ"
+                placeholder="Nhập họ của bạn"
                 className={`h-12 rounded-lg ${
                   errors.firstName ? 'border-red-500' : 'border-gray-300'
                 } focus:border-green-500 focus:ring-green-500`}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                onBlur={() => handleFieldBlur('firstName', firstName)}
               />
               {errors.firstName && (
                 <Alert className="mt-2 border-red-200 bg-red-50">
@@ -253,31 +360,53 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
               )}
             </div>
 
-            {/* Last Name (Optional) */}
+            {/* Last Name */}
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-2">
-                Tên đệm (tùy chọn)
+                Tên <span className="text-red-500">*</span>
               </label>
               <Input
-                placeholder="Nhập tên đệm"
-                className="h-12 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                placeholder="Nhập tên của bạn"
+                className={`h-12 rounded-lg ${
+                  errors.lastName ? 'border-red-500' : 'border-gray-300'
+                } focus:border-green-500 focus:ring-green-500`}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                onBlur={() => handleFieldBlur('lastName', lastName)}
               />
+              {errors.lastName && (
+                <Alert className="mt-2 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-600 text-sm">
+                    {errors.lastName}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {/* Date of Birth */}
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Ngày sinh
+                Ngày sinh <span className="text-red-500">*</span>
               </label>
               <Input
                 type="date"
-                className="h-12 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                className={`h-12 rounded-lg ${
+                  errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
+                } focus:border-green-500 focus:ring-green-500`}
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
+                onBlur={() => handleFieldBlur('dateOfBirth', dateOfBirth)}
               />
+              {errors.dateOfBirth && (
+                <Alert className="mt-2 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-600 text-sm">
+                    {errors.dateOfBirth}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {/* Gender */}
@@ -294,7 +423,10 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setGender(option.value)}
+                    onClick={() => {
+                      setGender(option.value);
+                      handleFieldBlur('gender', option.value);
+                    }}
                     className={`h-12 rounded-lg border-2 text-sm font-medium transition-colors ${
                       gender === option.value
                         ? 'border-green-500 bg-green-50 text-green-700'
@@ -319,14 +451,25 @@ export default function CompleteProfileForm({ isOpen, onClose, onComplete }: Com
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-2">
                 <MapPin className="w-4 h-4 inline mr-1" />
-                Địa chỉ
+                Địa chỉ <span className="text-red-500">*</span>
               </label>
               <Input
                 placeholder="Nhập địa chỉ của bạn"
-                className="h-12 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                className={`h-12 rounded-lg ${
+                  errors.address ? 'border-red-500' : 'border-gray-300'
+                } focus:border-green-500 focus:ring-green-500`}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                onBlur={() => handleFieldBlur('address', address)}
               />
+              {errors.address && (
+                <Alert className="mt-2 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-600 text-sm">
+                    {errors.address}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {/* Submit Button */}

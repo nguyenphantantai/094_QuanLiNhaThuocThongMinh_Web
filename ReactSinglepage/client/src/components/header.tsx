@@ -73,9 +73,9 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
         {/* Main header */}
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center mr-6 shrink-0">
-            <div className="text-2xl font-bold mr-2 leading-tight">
-              <span className="text-white">NHÀ THUỐC</span><br />
-              <span className="text-secondary text-3xl">Pharmacy</span>
+            <div className="text-2xl font-bold mr-2 leading-tight text-center">
+              <div className="text-white">NHÀ THUỐC</div>
+              <div className="text-white text-3xl">THÔNG MINH</div>
             </div>
           </div>
           

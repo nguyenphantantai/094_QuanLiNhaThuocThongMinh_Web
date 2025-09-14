@@ -98,9 +98,9 @@ export default function LoginForm({ isOpen, onClose, onSwitchToRegister }: Login
         <div className="flex items-center justify-between p-6 pb-4">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-lg">N</span>
+              <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="text-xl font-bold text-green-600">NhaThuocAI</span>
+            <span className="text-xl font-bold text-green-600">Nhà Thuốc Thông Minh</span>
           </div>
           <div className="flex items-center space-x-1 text-sm text-gray-600">
             <Globe className="w-4 h-4" />
