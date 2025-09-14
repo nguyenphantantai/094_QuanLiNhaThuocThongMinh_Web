@@ -1,0 +1,477 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Eye, EyeOff, Globe } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { API_BASE } from '@/lib/utils';
+import GarenaStyleProfileForm from './garena-style-profile-form';
+
+interface RegisterFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSwitchToLogin: () => void;
+}
+
+export default function RegisterForm({ isOpen, onClose, onSwitchToLogin }: RegisterFormProps) {
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<{
+    phone?: string;
+    password?: string;
+    confirmPassword?: string;
+    email?: string;
+    otp?: string;
+  }>({});
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [isRegisterFormOpen, setIsRegisterFormOpen] = useState(true);
+  const { toast } = useToast();
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('showCompleteProfile state changed:', showCompleteProfile);
+    console.log('showCompleteProfile state changed at:', new Date().toISOString());
+  }, [showCompleteProfile]);
+
+  // Simple function to show complete profile form (no longer needed with new flow)
+  // const showCompleteProfileForm = () => {
+  //   setShowCompleteProfile(true);
+  // };
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const validateForm = () => {
+    const newErrors: {
+      phone?: string;
+      password?: string;
+      confirmPassword?: string;
+      email?: string;
+      otp?: string;
+    } = {};
+    
+    if (!phone.trim()) {
+      newErrors.phone = 'Nhập số điện thoại';
+    } else {
+      // Validate Vietnamese phone number
+      const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
+      if (!phoneRegex.test(phone)) {
+        newErrors.phone = 'Số điện thoại không hợp lệ';
+      }
+    }
+    
+    if (!password.trim()) {
+      newErrors.password = 'Mật khẩu bỏ trống';
+    } else if (password.length < 6) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu của bạn.';
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Mật khẩu không khớp';
+    }
+    
+    if (!email.trim()) {
+      newErrors.email = 'Enter email valid';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = 'Email không hợp lệ';
+      }
+    }
+    
+    if (!otp.trim()) {
+      newErrors.otp = 'Nhập mã xác thực';
+    } else if (otp.length !== 6) {
+      newErrors.otp = 'Mã xác thực phải có 6 chữ số';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSendOTP = async () => {
+    if (!phone.trim()) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập số điện thoại trước",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
+    if (!phoneRegex.test(phone)) {
+      toast({
+        title: "Lỗi",
+        description: "Số điện thoại không hợp lệ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingOTP(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone,
+          method: 'sms',
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Send OTP response:', data);
+
+      if (data.success) {
+        setOtpSent(true);
+        setCountdown(60);
+        toast({
+          title: "OTP đã được gửi",
+          description: "Mã xác thực đã được gửi qua SMS",
+        });
+      } else {
+        toast({
+          title: "Gửi OTP thất bại",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi gửi OTP. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const requestBody = {
+        phone,
+        otp,
+        password,
+        email,
+      };
+      console.log('Register request body:', requestBody);
+      
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log('Register response:', data);
+
+      if (data.success) {
+        // Store token in localStorage
+        localStorage.setItem('auth_token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+        
+        // Check if profile completion is required
+        console.log('requiresProfileCompletion:', data.data.requiresProfileCompletion);
+        if (data.data.requiresProfileCompletion) {
+          console.log('Setting showCompleteProfile to true');
+          
+          // Show success toast
+          toast({
+            title: "Đăng ký thành công",
+            description: "Vui lòng hoàn thiện thông tin cá nhân",
+          });
+          
+          // Close register form and show profile form immediately
+          console.log('Before setShowCompleteProfile(true)');
+          setShowCompleteProfile(true);
+          setIsRegisterFormOpen(false);
+          console.log('After setShowCompleteProfile(true)');
+        } else {
+          // Close register form
+          onClose();
+          
+          // Reset form
+          setPhone('');
+          setPassword('');
+          setConfirmPassword('');
+          setEmail('');
+          setOtp('');
+          setErrors({});
+          setOtpSent(false);
+          
+          toast({
+            title: "Đăng ký thành công",
+            description: "Chào mừng bạn đến với NhaThuocAI!",
+          });
+          
+          // Reload page to update UI
+          window.location.reload();
+        }
+      } else {
+        toast({
+          title: "Đăng ký thất bại",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  return (
+    <>
+      <Dialog open={isOpen && isRegisterFormOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-[480px] p-0 overflow-hidden bg-white max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 pb-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+              <span className="text-white font-bold text-lg">N</span>
+            </div>
+            <span className="text-xl font-bold text-green-600">NhaThuocAI</span>
+          </div>
+            <div className="flex items-center space-x-1 text-sm text-gray-600">
+              <Globe className="w-4 h-4" />
+              <span>Việt Nam - Tiếng việt</span>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="px-6 pb-6">
+            <DialogHeader className="text-left mb-6">
+              <DialogTitle className="text-2xl font-bold text-gray-900">Đăng ký</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Phone Number Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Số điện thoại <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Số điện thoại"
+                  className="h-12 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  maxLength={11}
+                />
+                {errors.phone && (
+                  <Alert className="mt-2 border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-600 text-sm">
+                      {errors.phone}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Mật khẩu <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Mật khẩu"
+                    className={`h-12 rounded-lg pr-12 ${
+                      errors.password ? 'border-red-500' : 'border-gray-300'
+                    } focus:border-green-500 focus:ring-green-500`}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <Alert className="mt-2 border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-600 text-sm">
+                      {errors.password}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Nhập lại mật khẩu <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Nhập lại mật khẩu"
+                    className={`h-12 rounded-lg pr-12 ${
+                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    } focus:border-green-500 focus:ring-green-500`}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <Alert className="mt-2 border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-600 text-sm">
+                      {errors.confirmPassword}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  E-mail <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="email"
+                  placeholder="E-mail"
+                  className={`h-12 rounded-lg ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  } focus:border-green-500 focus:ring-green-500`}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Email bị bắt buộc để khôi phục tài khoản NhaThuocAI. Địa chỉ Gmail sẽ được định dạng lại để chặn email trái phép.
+                </p>
+                {errors.email && (
+                  <Alert className="mt-2 border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-600 text-sm">
+                      {errors.email}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* OTP Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Mã xác thực <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập mã OTP 6 chữ số"
+                    className={`h-12 rounded-lg flex-1 ${
+                      errors.otp ? 'border-red-500' : 'border-gray-300'
+                    } focus:border-green-500 focus:ring-green-500`}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    disabled={!otpSent}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSendOTP}
+                    disabled={isSendingOTP || countdown > 0}
+                    className="h-12 px-4 bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+                  >
+                    {isSendingOTP ? 'Đang gửi...' : countdown > 0 ? `${countdown}s` : 'Gửi OTP'}
+                  </Button>
+                </div>
+                {errors.otp && (
+                  <Alert className="mt-2 border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertDescription className="text-red-600 text-sm">
+                      {errors.otp}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {otpSent && (
+                  <p className="mt-1 text-sm text-green-600">
+                    Mã xác thực đã được gửi đến {phone}
+                  </p>
+                )}
+              </div>
+
+              {/* Register Button */}
+              <Button
+                onClick={handleRegister}
+                className="w-full h-12 rounded-lg text-base font-medium bg-green-600 hover:bg-green-700 text-white"
+              >
+                Đăng Ký Ngay
+              </Button>
+            </div>
+
+            {/* Terms and Privacy */}
+            <div className="mt-6 text-center text-sm text-gray-600">
+              <span>Bằng cách nhấn Đăng Ký Ngay, bạn đồng ý với </span>
+              <span className="text-blue-600 underline cursor-pointer">Điều Khoản Dịch Vụ</span>
+              <span> và </span>
+              <span className="text-blue-600 underline cursor-pointer">Chính Sách Bảo Mật</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Garena Style Profile Form */}
+      <GarenaStyleProfileForm
+        isOpen={showCompleteProfile}
+        onClose={() => {
+          setShowCompleteProfile(false);
+          setIsRegisterFormOpen(true);
+          // Reset form
+          setPhone('');
+          setPassword('');
+          setConfirmPassword('');
+          setEmail('');
+          setOtp('');
+          setErrors({});
+          setOtpSent(false);
+        }}
+        onComplete={() => {
+          setShowCompleteProfile(false);
+          // Reload page to update UI
+          window.location.reload();
+        }}
+      />
+    </>
+  );
+}
